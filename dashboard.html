@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUMP! Talent Pipeline -- Live Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Karla:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ink: #17211b;
+    --canvas: #eef1e9;
+    --canvas-raised: #ffffff;
+    --accent: #1f6b4d;
+    --accent-strong: #123f2c;
+    --accent-tint: #dfeae2;
+    --line: #d7ddd0;
+    --muted: #5b6459;
+    --tag: #8a6d3b;
+    --tag-tint: #f1e9d6;
+    --danger: #a3402b;
+    --danger-tint: #f5e6e0;
+    --shadow: 0 1px 2px rgba(23,33,27,0.06), 0 8px 24px -12px rgba(23,33,27,0.18);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "Karla", -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, "Courier New", monospace; font-variant-numeric: tabular-nums; }
+  [hidden] { display: none !important; }
+
+  header.masthead {
+    padding: 32px 24px 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .masthead-inner { max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: clamp(24px, 3.2vw, 32px); margin: 0 0 4px; text-wrap: balance; }
+  header p.lede { margin: 0; color: var(--muted); font-size: 13.5px; max-width: 50ch; }
+
+  .stat-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat-tile { background: var(--canvas-raised); border: 1px solid var(--line); border-radius: 10px; padding: 9px 15px; min-width: 92px; box-shadow: var(--shadow); }
+  .stat-tile .n { font-family: "Fraunces", Georgia, serif; font-size: 22px; font-weight: 500; line-height: 1; }
+  .stat-tile .l { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+
+  .gate { max-width: 380px; margin: 70px auto; background: var(--canvas-raised); border: 1px solid var(--line); border-radius: 12px; padding: 28px; text-align: center; }
+  .gate h2 { margin: 0 0 8px; font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 19px; }
+  .gate p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .gate input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--line); font-size: 14px; margin-bottom: 12px; font-family: inherit; }
+  .gate button { width: 100%; padding: 10px; border-radius: 8px; border: none; background: var(--accent); color: white; font-size: 14px; cursor: pointer; font-weight: 600; }
+  .gate button:hover { background: var(--accent-strong); }
+  .gate .error { color: var(--danger); font-size: 12.5px; margin-top: 8px; min-height: 16px; }
+
+  nav.tabs { max-width: 1000px; margin: 0 auto; padding: 0 24px; display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+  nav.tabs button {
+    font-family: "Karla", sans-serif; font-weight: 600; font-size: 14px; background: none; border: none;
+    border-bottom: 2px solid transparent; color: var(--muted); padding: 12px 14px; cursor: pointer;
+  }
+  nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  h2.section-title { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 19px; margin: 0 0 4px; }
+  p.section-sub { color: var(--muted); font-size: 13.5px; margin: 0 0 18px; max-width: 62ch; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chip {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--canvas-raised); color: var(--muted); cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: white; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--canvas-raised); box-shadow: var(--shadow); }
+  table.data-table { width: 100%; border-collapse: collapse; }
+  table.data-table th {
+    text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  table.data-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: top; }
+  table.data-table tbody tr:last-child td { border-bottom: none; }
+  .cand-name { font-weight: 600; }
+  .cand-id { color: var(--muted); font-size: 11px; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 4px; max-width: 200px; }
+  .tag { font-size: 11px; background: var(--tag-tint); color: var(--tag); padding: 2px 8px; border-radius: 999px; }
+  .rejection-quote { font-style: italic; color: var(--muted); max-width: 220px; font-size: 12.5px; }
+
+  .job-card { background: var(--canvas-raised); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .job-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+  .job-card h3 { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 17px; margin: 0 0 4px; }
+  .job-meta { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--tag); }
+  .job-desc { color: var(--muted); font-size: 13.5px; margin: 10px 0 0; max-width: 62ch; }
+  .status-pill { font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .status-pill.open { background: var(--accent-tint); color: var(--accent-strong); }
+  .status-pill.closed { background: var(--line); color: var(--muted); }
+
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; font-size: 13.5px; }
+  .error-banner { background: var(--danger-tint); color: var(--danger); padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .refresh-btn {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; background: var(--canvas-raised); border: 1px solid var(--line);
+    padding: 6px 12px; border-radius: 7px; cursor: pointer; color: var(--muted);
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
+  .last-updated { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <h2>Enter admin passphrase</h2>
+  <p>Same passphrase as the admin page -- this shows real candidate data, so it's gated the same way.</p>
+  <input type="password" id="gate-input" placeholder="Passphrase" />
+  <button type="button" id="gate-submit">Continue</button>
+  <div class="error" id="gate-error"></div>
+</div>
+
+<div id="app" hidden>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div>
+        <div class="eyebrow"><span class="dot"></span>JUMP! Talent Pipeline &middot; Live</div>
+        <h1>Live Dashboard</h1>
+        <p class="lede">Reads directly from the Google Sheet on every load -- not a snapshot. <button type="button" class="refresh-btn" id="refresh-btn">&#8635; Refresh</button></p>
+        <div class="last-updated" id="last-updated"></div>
+      </div>
+      <div class="stat-row" id="stat-row"></div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="pipeline" aria-selected="true">Pipeline</button>
+    <button data-tab="openings" aria-selected="false">Openings</button>
+  </nav>
+
+  <main>
+    <div class="panel active" id="panel-pipeline">
+      <h2 class="section-title">The bench</h2>
+      <p class="section-sub">Every candidate currently in the Rejected tab, live. Filter by function or level.</p>
+      <div class="chip-row" id="fn-chips"></div>
+      <div class="chip-row" id="lvl-chips"></div>
+      <div id="pipeline-error"></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Candidate</th><th>Applied role</th><th>Yrs</th><th>Location</th><th>Key skills</th><th>Rejection reason</th></tr></thead>
+          <tbody id="pipeline-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-openings">
+      <h2 class="section-title">Open roles</h2>
+      <p class="section-sub">Every job on the Jobs tab, live, including closed ones.</p>
+      <div id="openings-error"></div>
+      <div id="openings-list"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqbVQMjp-uICByK0rXbAWVo6p4P2YSaMyLZqQKlQ8K2DKfDgLoh5cLCKSHOWdImNrMTg/exec";
+const STORAGE_KEY = "jump-admin-key";
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s == null ? "" : String(s);
+  return d.innerHTML;
+}
+
+function apiGet(params) {
+  const url = new URL(APPS_SCRIPT_URL);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  return fetch(url.toString()).then(res => res.json());
+}
+
+function getStoredKey() {
+  try { return localStorage.getItem(STORAGE_KEY) || ""; } catch (e) { return ""; }
+}
+function setStoredKey(key) {
+  try { localStorage.setItem(STORAGE_KEY, key); } catch (e) {}
+}
+
+function splitList(s) {
+  return (s || "").split(",").map(x => x.trim()).filter(Boolean);
+}
+
+let candidates = [];
+let jobs = [];
+const pipelineState = { fn: null, lvl: null };
+
+async function loadAll() {
+  document.getElementById("pipeline-error").innerHTML = "";
+  document.getElementById("openings-error").innerHTML = "";
+  const key = getStoredKey();
+
+  const [candResult, jobResult] = await Promise.all([
+    apiGet({ action: "allRejected", admin_key: key }).catch(() => ({ ok: false, error: "Network error." })),
+    apiGet({ action: "allJobs", admin_key: key }).catch(() => ({ ok: false, error: "Network error." })),
+  ]);
+
+  if (!candResult.ok) {
+    document.getElementById("pipeline-error").innerHTML = `<div class="error-banner">${esc(candResult.error)}</div>`;
+    candidates = [];
+  } else {
+    candidates = candResult.candidates;
+  }
+
+  if (!jobResult.ok) {
+    document.getElementById("openings-error").innerHTML = `<div class="error-banner">${esc(jobResult.error)}</div>`;
+    jobs = [];
+  } else {
+    jobs = jobResult.jobs;
+  }
+
+  renderStats();
+  renderPipeline();
+  renderOpenings();
+  document.getElementById("last-updated").textContent = "Last loaded: " + new Date().toLocaleTimeString();
+}
+
+function renderStats() {
+  const openJobs = jobs.filter(j => String(j.status).toLowerCase() === "open").length;
+  const tiles = [[candidates.length, "In pipeline"], [openJobs, "Open roles"], [jobs.length, "Total roles"]];
+  document.getElementById("stat-row").innerHTML = tiles.map(([n, l]) =>
+    `<div class="stat-tile"><div class="n mono">${n}</div><div class="l">${l}</div></div>`
+  ).join("");
+}
+
+function chip(label, pressed, onClick) {
+  const btn = document.createElement("button");
+  btn.className = "chip";
+  btn.type = "button";
+  btn.textContent = label;
+  btn.setAttribute("aria-pressed", String(pressed));
+  btn.addEventListener("click", onClick);
+  return btn;
+}
+
+function renderPipeline() {
+  const functions = [...new Set(candidates.map(c => c.applied_function))].filter(Boolean).sort();
+  const levels = [...new Set(candidates.map(c => c.applied_level))].filter(Boolean).sort();
+
+  const fnWrap = document.getElementById("fn-chips");
+  const lvlWrap = document.getElementById("lvl-chips");
+  fnWrap.innerHTML = ""; lvlWrap.innerHTML = "";
+  fnWrap.appendChild(chip("All functions", pipelineState.fn === null, () => { pipelineState.fn = null; renderPipelineRows(); renderPipeline(); }));
+  functions.forEach(f => fnWrap.appendChild(chip(f, pipelineState.fn === f, () => { pipelineState.fn = f; renderPipelineRows(); renderPipeline(); })));
+  lvlWrap.appendChild(chip("All levels", pipelineState.lvl === null, () => { pipelineState.lvl = null; renderPipelineRows(); renderPipeline(); }));
+  levels.forEach(l => lvlWrap.appendChild(chip(l, pipelineState.lvl === l, () => { pipelineState.lvl = l; renderPipelineRows(); renderPipeline(); })));
+
+  renderPipelineRows();
+}
+
+function renderPipelineRows() {
+  const tbody = document.getElementById("pipeline-tbody");
+  const filtered = candidates.filter(c =>
+    (!pipelineState.fn || c.applied_function === pipelineState.fn) &&
+    (!pipelineState.lvl || c.applied_level === pipelineState.lvl)
+  );
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">No candidates${candidates.length ? " match those filters" : " in the Rejected tab yet"}.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c => {
+    const skills = splitList(c.key_skills);
+    return `
+      <tr>
+        <td><div class="cand-name">${esc(c.first_name)} ${esc(c.last_name)}</div><div class="cand-id mono">${esc(c.candidate_id)}</div></td>
+        <td>${esc(c.applied_role)}<br><span style="color:var(--muted);font-size:11.5px;">${esc(c.applied_function)} &times; ${esc(c.applied_level)}</span></td>
+        <td class="mono">${esc(c.years_of_experience)}</td>
+        <td style="max-width:130px;">${esc(c.location)}</td>
+        <td><div class="tag-list">${skills.slice(0, 3).map(s => `<span class="tag">${esc(s)}</span>`).join("")}${skills.length > 3 ? `<span class="tag">+${skills.length - 3}</span>` : ""}</div></td>
+        <td class="rejection-quote">${c.rejection_reason ? `&ldquo;${esc(c.rejection_reason)}&rdquo;` : "&mdash;"}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderOpenings() {
+  const wrap = document.getElementById("openings-list");
+  if (!jobs.length) {
+    wrap.innerHTML = `<div class="empty">No jobs found.</div>`;
+    return;
+  }
+  wrap.innerHTML = jobs.map(j => {
+    const isOpen = String(j.status).toLowerCase() === "open";
+    const skills = splitList(j.required_skills);
+    return `
+      <div class="job-card">
+        <div class="job-card-head">
+          <div>
+            <h3>${esc(j.title)}</h3>
+            <div class="job-meta">${esc(j.function)} &middot; ${esc(j.level)} &middot; min ${esc(j.min_years_experience)}y &middot; ${esc(j.hiring_manager_name) || "no hiring manager set"}</div>
+          </div>
+          <span class="status-pill ${isOpen ? "open" : "closed"}">${isOpen ? "Open" : "Closed"}</span>
+        </div>
+        <p class="job-desc">${esc(j.description)}</p>
+        <div class="tag-list" style="margin-top:10px;">${skills.map(s => `<span class="tag">${esc(s)}</span>`).join("")}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function tryUnlock(key) {
+  const errorEl = document.getElementById("gate-error");
+  errorEl.textContent = "";
+  const result = await apiGet({ action: "allJobs", admin_key: key }).catch(() => ({ ok: false, error: "Could not reach the backend." }));
+  if (!result.ok) {
+    errorEl.textContent = result.error || "That passphrase didn't work.";
+    return;
+  }
+  setStoredKey(key);
+  document.getElementById("gate").hidden = true;
+  document.getElementById("app").hidden = false;
+  loadAll();
+}
+
+document.getElementById("gate-submit").addEventListener("click", () => {
+  const key = document.getElementById("gate-input").value;
+  if (key) tryUnlock(key);
+});
+document.getElementById("gate-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("gate-submit").click();
+});
+document.getElementById("refresh-btn").addEventListener("click", loadAll);
+document.querySelectorAll("nav.tabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", String(b === btn)));
+    document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + btn.dataset.tab));
+  });
+});
+
+(function init() {
+  const stored = getStoredKey();
+  if (stored) tryUnlock(stored);
+})();
+</script>
+
+</body>
+</html>
