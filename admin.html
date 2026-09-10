@@ -97,9 +97,39 @@
   .toggle-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
   .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
   .forget-link { font-size: 12px; color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; }
+
+  .toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+    pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--card); border-radius: var(--radius); box-shadow: 0 4px 18px rgba(0,0,0,0.14);
+    padding: 14px 16px; max-width: 340px;
+    border-left: 4px solid var(--brand);
+    animation: toast-in 0.2s ease-out;
+  }
+  .toast.err { border-left-color: var(--danger); }
+  .toast .icon { font-size: 17px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+  .toast .msg { font-size: 13.5px; line-height: 1.4; }
+  .toast .close {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 0; margin-left: auto; flex-shrink: 0;
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toast { animation: none; }
+  }
 </style>
 </head>
 <body>
+
+<div class="toast-container" id="toast-container"></div>
 
 <header>
   <div class="inner">
@@ -200,6 +230,22 @@ function populateSelect(select, options) {
   select.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join("");
 }
 
+function showToast(message, kind) {
+  const container = document.getElementById("toast-container");
+  const toast = document.createElement("div");
+  toast.className = "toast" + (kind === "err" ? " err" : "");
+  toast.innerHTML = `
+    <span class="icon">${kind === "err" ? "⚠️" : "✅"}</span>
+    <span class="msg"></span>
+    <button type="button" class="close" aria-label="Dismiss">&times;</button>
+  `;
+  toast.querySelector(".msg").textContent = message; // textContent, not innerHTML -- message may include a job title someone typed
+  const remove = () => toast.remove();
+  toast.querySelector(".close").addEventListener("click", remove);
+  container.appendChild(toast);
+  setTimeout(remove, 5000);
+}
+
 async function tryUnlock(key) {
   const errorEl = document.getElementById("gate-error");
   errorEl.textContent = "";
@@ -270,14 +316,24 @@ async function submitAddJob(evt) {
   evt.preventDefault();
   const statusEl = document.getElementById("add-job-status");
   const submitBtn = document.getElementById("add-job-submit");
+
+  // Belt-and-suspenders against a double-click double-adding the same
+  // job: disable synchronously (before anything async happens) AND
+  // change the label, so a second click in the same instant has
+  // nothing clickable to land on.
+  if (submitBtn.disabled) return;
+  submitBtn.disabled = true;
+  const originalLabel = submitBtn.textContent;
+  submitBtn.textContent = "Adding...";
   statusEl.textContent = "";
   statusEl.className = "form-status";
-  submitBtn.disabled = true;
+
+  const title = document.getElementById("f-title").value.trim();
 
   const result = await apiGet({
     action: "addJob",
     admin_key: getStoredKey(),
-    title: document.getElementById("f-title").value.trim(),
+    title,
     function: document.getElementById("f-function").value,
     level: document.getElementById("f-level").value,
     min_years_experience: document.getElementById("f-years").value || "0",
@@ -287,18 +343,25 @@ async function submitAddJob(evt) {
     description: document.getElementById("f-description").value.trim(),
   }).catch(() => ({ ok: false, error: "Network error." }));
 
-  submitBtn.disabled = false;
-
   if (!result.ok) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalLabel;
     statusEl.textContent = result.error || "Something went wrong.";
     statusEl.className = "form-status err";
+    showToast(result.error || "Could not add that opening.", "err");
     return;
   }
 
-  statusEl.textContent = `Added as ${result.job_id}. It's live on the careers page now.`;
+  showToast(`"${title}" added as ${result.job_id} -- live on the careers page now.`, "ok");
+  statusEl.textContent = `Added as ${result.job_id}.`;
   statusEl.className = "form-status ok";
   document.getElementById("add-job-form").reset();
   document.getElementById("f-years").value = "0";
+  submitBtn.textContent = "Added ✓";
+  setTimeout(() => {
+    submitBtn.textContent = originalLabel;
+    submitBtn.disabled = false;
+  }, 1500);
   refreshJobsList();
 }
 
