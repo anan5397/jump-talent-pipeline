@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUMP! Talent Pipeline -- HR Admin</title>
+<style>
+  :root {
+    --brand: #0f7a5c;
+    --brand-dark: #0b5d45;
+    --bg: #fafaf8;
+    --card: #ffffff;
+    --text: #1c1c1c;
+    --muted: #62675e;
+    --border: #e4e2dc;
+    --radius: 10px;
+    --danger: #a3402b;
+    --danger-tint: #f5e6e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  header .inner { max-width: 760px; margin: 0 auto; }
+  header h1 { margin: 0 0 4px; font-size: 24px; }
+  header p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px; }
+
+  .gate {
+    max-width: 380px;
+    margin: 60px auto;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+  }
+  .gate h2 { margin: 0 0 8px; font-size: 18px; }
+  .gate p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .gate input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 14px; margin-bottom: 12px; }
+  .gate button { width: 100%; padding: 10px; border-radius: 8px; border: none; background: var(--brand); color: white; font-size: 14px; cursor: pointer; }
+  .gate button:hover { background: var(--brand-dark); }
+  .gate .error { color: var(--danger); font-size: 12.5px; margin-top: 8px; min-height: 16px; }
+
+  [hidden] { display: none !important; }
+
+  section { margin-bottom: 32px; }
+  h2.section-title { font-size: 17px; margin: 0 0 4px; }
+  p.section-sub { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+
+  form.add-job-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--border);
+    font-size: 13.5px; font-family: inherit; background: white;
+  }
+  .submit-btn {
+    background: var(--brand); color: white; border: none; padding: 10px 18px;
+    border-radius: 8px; font-size: 14px; cursor: pointer;
+  }
+  .submit-btn:hover { background: var(--brand-dark); }
+  .submit-btn:disabled { opacity: 0.6; cursor: default; }
+  .form-status { margin-top: 12px; font-size: 13px; min-height: 18px; }
+  .form-status.ok { color: var(--brand-dark); }
+  .form-status.err { color: var(--danger); }
+
+  .job-row {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between;
+    align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .job-row .title { font-weight: 600; font-size: 14.5px; }
+  .job-row .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .status-pill { font-size: 11.5px; padding: 3px 10px; border-radius: 999px; font-weight: 600; }
+  .status-pill.open { background: #e8f6ef; color: var(--brand-dark); }
+  .status-pill.closed { background: #eee; color: var(--muted); }
+  .toggle-btn {
+    background: transparent; border: 1px solid var(--border); padding: 6px 12px;
+    border-radius: 7px; font-size: 12.5px; cursor: pointer; color: var(--text);
+  }
+  .toggle-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+  .forget-link { font-size: 12px; color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <h1>Talent Pipeline &middot; HR Admin</h1>
+    <p>Internal tool -- add or close job openings directly on the live Google Sheet. Not linked from the public careers page.</p>
+  </div>
+</header>
+
+<main>
+  <div class="gate" id="gate">
+    <h2>Enter admin passphrase</h2>
+    <p>Set once in the Apps Script project under Project Settings &gt; Script Properties (key: <code>ADMIN_KEY</code>). Ask whoever deployed this if you don't have it.</p>
+    <input type="password" id="gate-input" placeholder="Passphrase" />
+    <button type="button" id="gate-submit">Continue</button>
+    <div class="error" id="gate-error"></div>
+  </div>
+
+  <div id="app" hidden>
+    <section>
+      <h2 class="section-title">Add a new opening</h2>
+      <p class="section-sub">Saved directly to the Jobs tab -- shows up on the careers page and gets picked up by the matching agent automatically.</p>
+      <form class="add-job-form" id="add-job-form">
+        <div class="grid-2">
+          <div class="field">
+            <label for="f-title">Job title</label>
+            <input id="f-title" required />
+          </div>
+          <div class="field">
+            <label for="f-function">Function</label>
+            <select id="f-function" required></select>
+          </div>
+          <div class="field">
+            <label for="f-level">Level</label>
+            <select id="f-level" required></select>
+          </div>
+          <div class="field">
+            <label for="f-years">Minimum years of experience</label>
+            <input id="f-years" type="number" min="0" value="0" required />
+          </div>
+          <div class="field">
+            <label for="f-hm-name">Hiring manager name</label>
+            <input id="f-hm-name" />
+          </div>
+          <div class="field">
+            <label for="f-hm-email">Hiring manager email</label>
+            <input id="f-hm-email" type="email" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-skills">Required skills (comma-separated)</label>
+          <input id="f-skills" placeholder="e.g. Group Facilitation, First Aid" />
+        </div>
+        <div class="field">
+          <label for="f-description">Description</label>
+          <textarea id="f-description" rows="3"></textarea>
+        </div>
+        <button type="submit" class="submit-btn" id="add-job-submit">Add opening</button>
+        <div class="form-status" id="add-job-status"></div>
+      </form>
+    </section>
+
+    <section>
+      <h2 class="section-title">All openings</h2>
+      <p class="section-sub">Every job on the sheet, including closed ones. Toggling status here updates the same Jobs tab.</p>
+      <div id="jobs-list"></div>
+    </section>
+
+    <button type="button" class="forget-link" id="forget-btn">Use a different passphrase</button>
+  </div>
+</main>
+
+<script>
+/* Set this to your deployed Apps Script Web App /exec URL -- same one
+   used in index.html's CONFIG.APPS_SCRIPT_URL. */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxqbVQMjp-uICByK0rXbAWVo6p4P2YSaMyLZqQKlQ8K2DKfDgLoh5cLCKSHOWdImNrMTg/exec";
+
+const FUNCTIONS = ["Program design", "Operations", "Facilitation", "Marketing", "Business development", "Finance"];
+const LEVELS = ["Contractor", "Officer", "Manager", "Director", "Executive"];
+const STORAGE_KEY = "jump-admin-key";
+
+function apiGet(params) {
+  const url = new URL(APPS_SCRIPT_URL);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  return fetch(url.toString()).then(res => res.json());
+}
+
+function getStoredKey() {
+  try { return localStorage.getItem(STORAGE_KEY) || ""; } catch (e) { return ""; }
+}
+function setStoredKey(key) {
+  try { localStorage.setItem(STORAGE_KEY, key); } catch (e) { /* private browsing -- fine, just won't persist */ }
+}
+function clearStoredKey() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+function populateSelect(select, options) {
+  select.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join("");
+}
+
+async function tryUnlock(key) {
+  const errorEl = document.getElementById("gate-error");
+  errorEl.textContent = "";
+  if (!APPS_SCRIPT_URL) {
+    errorEl.textContent = "APPS_SCRIPT_URL is not configured in this file yet.";
+    return;
+  }
+  const result = await apiGet({ action: "allJobs", admin_key: key }).catch(() => ({ ok: false, error: "Could not reach the backend." }));
+  if (!result.ok) {
+    errorEl.textContent = result.error || "That passphrase didn't work.";
+    return;
+  }
+  setStoredKey(key);
+  document.getElementById("gate").hidden = true;
+  document.getElementById("app").hidden = false;
+  renderJobsList(result.jobs);
+}
+
+function renderJobsList(jobs) {
+  const wrap = document.getElementById("jobs-list");
+  if (!jobs.length) {
+    wrap.innerHTML = `<div class="empty">No openings yet.</div>`;
+    return;
+  }
+  wrap.innerHTML = jobs.map(j => {
+    const isOpen = String(j.status).toLowerCase() === "open";
+    return `
+      <div class="job-row">
+        <div>
+          <div class="title">${j.title}</div>
+          <div class="meta">${j.function} &middot; ${j.level} &middot; ${j.job_id}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="status-pill ${isOpen ? "open" : "closed"}">${isOpen ? "Open" : "Closed"}</span>
+          <button type="button" class="toggle-btn" data-job-id="${j.job_id}" data-next-status="${isOpen ? "closed" : "open"}">
+            ${isOpen ? "Close" : "Reopen"}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  wrap.querySelectorAll(".toggle-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      const result = await apiGet({
+        action: "setJobStatus",
+        admin_key: getStoredKey(),
+        job_id: btn.dataset.jobId,
+        status: btn.dataset.nextStatus,
+      }).catch(() => ({ ok: false, error: "Network error." }));
+      if (!result.ok) {
+        alert(result.error || "Could not update that job.");
+        btn.disabled = false;
+        return;
+      }
+      refreshJobsList();
+    });
+  });
+}
+
+async function refreshJobsList() {
+  const result = await apiGet({ action: "allJobs", admin_key: getStoredKey() }).catch(() => ({ ok: false }));
+  if (result.ok) renderJobsList(result.jobs);
+}
+
+async function submitAddJob(evt) {
+  evt.preventDefault();
+  const statusEl = document.getElementById("add-job-status");
+  const submitBtn = document.getElementById("add-job-submit");
+  statusEl.textContent = "";
+  statusEl.className = "form-status";
+  submitBtn.disabled = true;
+
+  const result = await apiGet({
+    action: "addJob",
+    admin_key: getStoredKey(),
+    title: document.getElementById("f-title").value.trim(),
+    function: document.getElementById("f-function").value,
+    level: document.getElementById("f-level").value,
+    min_years_experience: document.getElementById("f-years").value || "0",
+    hiring_manager_name: document.getElementById("f-hm-name").value.trim(),
+    hiring_manager_email: document.getElementById("f-hm-email").value.trim(),
+    required_skills: document.getElementById("f-skills").value.trim(),
+    description: document.getElementById("f-description").value.trim(),
+  }).catch(() => ({ ok: false, error: "Network error." }));
+
+  submitBtn.disabled = false;
+
+  if (!result.ok) {
+    statusEl.textContent = result.error || "Something went wrong.";
+    statusEl.className = "form-status err";
+    return;
+  }
+
+  statusEl.textContent = `Added as ${result.job_id}. It's live on the careers page now.`;
+  statusEl.className = "form-status ok";
+  document.getElementById("add-job-form").reset();
+  document.getElementById("f-years").value = "0";
+  refreshJobsList();
+}
+
+document.getElementById("gate-submit").addEventListener("click", () => {
+  const key = document.getElementById("gate-input").value;
+  if (key) tryUnlock(key);
+});
+document.getElementById("gate-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("gate-submit").click();
+});
+document.getElementById("forget-btn").addEventListener("click", () => {
+  clearStoredKey();
+  document.getElementById("app").hidden = true;
+  document.getElementById("gate").hidden = false;
+  document.getElementById("gate-input").value = "";
+});
+document.getElementById("add-job-form").addEventListener("submit", submitAddJob);
+
+populateSelect(document.getElementById("f-function"), FUNCTIONS);
+populateSelect(document.getElementById("f-level"), LEVELS);
+
+(function init() {
+  const stored = getStoredKey();
+  if (stored) tryUnlock(stored);
+})();
+</script>
+
+</body>
+</html>

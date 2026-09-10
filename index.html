@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Careers at JUMP!</title>
+<style>
+  :root {
+    --brand: #0f7a5c;
+    --brand-dark: #0b5d45;
+    --bg: #fafaf8;
+    --card: #ffffff;
+    --text: #1c1c1c;
+    --muted: #62675e;
+    --border: #e4e2dc;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    padding: 48px 24px 32px;
+    text-align: center;
+    background: linear-gradient(180deg, #ecf6f1 0%, var(--bg) 100%);
+  }
+  header h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 40px); }
+  header p { margin: 0; color: var(--muted); max-width: 560px; margin-inline: auto; }
+
+  #status-banner {
+    max-width: 900px;
+    margin: 0 auto 8px;
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    text-align: center;
+  }
+  #status-banner.demo { background: #fff6e0; color: #7a5b00; border: 1px solid #f0dfa0; }
+  #status-banner.live { background: #e8f6ef; color: var(--brand-dark); border: 1px solid #bfe6d5; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 16px 24px 64px; }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .filters select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+  }
+
+  .job-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .job-card h3 { margin: 0 0 4px; font-size: 18px; }
+  .job-meta { color: var(--muted); font-size: 13px; }
+  .tag {
+    display: inline-block;
+    background: #eef2ee;
+    color: #3a4a3f;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    margin-right: 6px;
+  }
+  .apply-btn, .submit-btn {
+    background: var(--brand);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .apply-btn:hover, .submit-btn:hover { background: var(--brand-dark); }
+
+  dialog {
+    border: none;
+    border-radius: var(--radius);
+    padding: 0;
+    width: min(560px, 92vw);
+  }
+  dialog::backdrop { background: rgba(0,0,0,0.45); }
+  .dialog-inner { padding: 24px; }
+  .dialog-inner h2 { margin-top: 0; }
+  form .field { margin-bottom: 14px; }
+  form label { display: block; font-size: 13px; margin-bottom: 4px; color: var(--muted); }
+  form input, form textarea, form select {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .cancel-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .success-state, .error-state { text-align: center; padding: 12px 0; }
+  .success-state h2 { color: var(--brand-dark); }
+  .error-state { color: #a12727; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Join JUMP!</h1>
+  <p>We build experiential education programs across Southeast Asia. Explore current openings below.</p>
+</header>
+
+<div id="status-banner"></div>
+
+<main>
+  <div class="filters">
+    <select id="filter-function"><option value="">All functions</option></select>
+    <select id="filter-level"><option value="">All levels</option></select>
+  </div>
+
+  <div id="jobs-list"></div>
+</main>
+
+<dialog id="apply-dialog">
+  <div class="dialog-inner">
+    <div id="dialog-form-view">
+      <h2 id="dialog-job-title">Apply</h2>
+      <p class="job-meta" id="dialog-job-meta"></p>
+      <form id="apply-form">
+        <input type="hidden" id="f-job-id" />
+        <div class="field">
+          <label for="f-first-name">First name</label>
+          <input id="f-first-name" required />
+        </div>
+        <div class="field">
+          <label for="f-last-name">Last name</label>
+          <input id="f-last-name" required />
+        </div>
+        <div class="field">
+          <label for="f-email">Email</label>
+          <input id="f-email" type="email" required />
+        </div>
+        <div class="field">
+          <label for="f-phone">Phone</label>
+          <input id="f-phone" required />
+        </div>
+        <div class="field">
+          <label for="f-location">Location</label>
+          <input id="f-location" required />
+        </div>
+        <div class="field">
+          <label for="f-years">Years of relevant experience</label>
+          <input id="f-years" type="number" min="0" required />
+        </div>
+        <div class="field">
+          <label for="f-skills">Key skills (comma-separated)</label>
+          <input id="f-skills" placeholder="e.g. Group Facilitation, First Aid" required />
+        </div>
+        <div class="field">
+          <label for="f-interests">Other JUMP! functions you'd consider (comma-separated, optional)</label>
+          <input id="f-interests" placeholder="e.g. Operations, Program design" />
+        </div>
+        <div class="field">
+          <label for="f-summary">Short summary / cover note</label>
+          <textarea id="f-summary" rows="4" required></textarea>
+        </div>
+        <div class="field">
+          <label for="f-resume-file">Attach resume (PDF or Word, max 8MB)</label>
+          <input id="f-resume-file" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        </div>
+        <div class="field">
+          <label for="f-resume">...or paste a link instead (Drive / LinkedIn / portfolio)</label>
+          <input id="f-resume" type="url" placeholder="https://" />
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="cancel-btn" id="cancel-btn">Cancel</button>
+          <button type="submit" class="submit-btn">Submit application</button>
+        </div>
+      </form>
+    </div>
+    <div id="dialog-success-view" class="success-state" hidden>
+      <h2>Application received</h2>
+      <p>Thank you for applying to JUMP! Our recruitment team will review your application and be in touch.</p>
+      <div class="dialog-actions" style="justify-content:center;">
+        <button type="button" class="submit-btn" id="close-success-btn">Close</button>
+      </div>
+    </div>
+    <div id="dialog-error-view" class="error-state" hidden>
+      <h2>Something went wrong</h2>
+      <p id="error-message">Please try again in a moment, or email us directly.</p>
+      <div class="dialog-actions" style="justify-content:center;">
+        <button type="button" class="cancel-btn" id="close-error-btn">Close</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<footer>JUMP! Talent Pipeline &middot; powered by an AI-assisted recruitment agent</footer>
+
+<script>
+/* =====================================================================
+   CONFIGURATION
+   =====================================================================
+   Set APPS_SCRIPT_URL to the /exec URL you get after deploying
+   apps_script/Code.gs as a Web App (see careers-page/README.md).
+
+   Until it's set, this page runs in DEMO MODE: jobs come from
+   SAMPLE_JOBS below and "submitting" an application just shows the
+   success state locally -- nothing is sent anywhere. This means the
+   page is safe to preview/embed before the Google Sheet backend exists.
+   ===================================================================== */
+const CONFIG = {
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxqbVQMjp-uICByK0rXbAWVo6p4P2YSaMyLZqQKlQ8K2DKfDgLoh5cLCKSHOWdImNrMTg/exec",
+};
+
+const SAMPLE_JOBS = [
+  {
+    job_id: "JOB-OUTDOOR-INSTRUCTOR",
+    title: "Outdoor Instructor",
+    function: "Facilitation",
+    level: "Contractor",
+    description: "Deliver outdoor learning activities, support youth groups, facilitate experiential learning sessions, and manage participant safety in the field.",
+    required_skills: "Outdoor Education, Group Facilitation, Youth Safety, First Aid",
+    status: "Open",
+  },
+  {
+    job_id: "JOB-FACILITATOR",
+    title: "Facilitator",
+    function: "Facilitation",
+    level: "Contractor",
+    description: "Facilitate workshops and experiential learning sessions, support group learning, and engage young people and educators.",
+    required_skills: "Group Facilitation, Workshop Design, Experiential Learning",
+    status: "Open",
+  },
+  {
+    job_id: "JOB-PROGRAM-OFFICER-JEXP",
+    title: "Program Officer, J! Experiences",
+    function: "Program design",
+    level: "Officer",
+    description: "Coordinate education programs, support program delivery, work with facilitators and partners, and help design learning experiences.",
+    required_skills: "Curriculum Design, Program Coordination, Partner Management",
+    status: "Open",
+  },
+  {
+    job_id: "JOB-SR-PROGRAM-MANAGER",
+    title: "Senior Program Manager",
+    function: "Program design",
+    level: "Manager",
+    description: "Lead program design and delivery, manage teams and partnerships, develop educational programs, and oversee program quality.",
+    required_skills: "Curriculum Strategy, Team Management, Partner Management",
+    status: "Open",
+  },
+  {
+    job_id: "JOB-PM-JEEF",
+    title: "Project Manager, J! EEF",
+    function: "Program design",
+    level: "Manager",
+    description: "Manage education projects, coordinate stakeholders, track delivery, manage timelines, and support program implementation.",
+    required_skills: "Project Management, Stakeholder Coordination, Timeline Tracking",
+    status: "Open",
+  },
+];
+
+let jobsCache = [];
+
+function isLiveMode() {
+  return Boolean(CONFIG.APPS_SCRIPT_URL);
+}
+
+async function loadJobs() {
+  const banner = document.getElementById("status-banner");
+  if (!isLiveMode()) {
+    banner.className = "demo";
+    banner.textContent = "Demo mode: showing sample jobs. Configure APPS_SCRIPT_URL to load live openings from the Google Sheet.";
+    return SAMPLE_JOBS;
+  }
+  try {
+    const res = await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=jobs`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    banner.className = "live";
+    banner.textContent = "Showing live openings from JUMP!'s talent pipeline.";
+    return data.jobs || [];
+  } catch (err) {
+    console.error("Failed to load live jobs, falling back to sample data:", err);
+    banner.className = "demo";
+    banner.textContent = "Could not reach the live job feed -- showing sample jobs instead.";
+    return SAMPLE_JOBS;
+  }
+}
+
+function populateFilters(jobs) {
+  const functions = [...new Set(jobs.map(j => j.function))].sort();
+  const levels = [...new Set(jobs.map(j => j.level))].sort();
+  const fSel = document.getElementById("filter-function");
+  const lSel = document.getElementById("filter-level");
+  for (const f of functions) {
+    const opt = document.createElement("option");
+    opt.value = f; opt.textContent = f;
+    fSel.appendChild(opt);
+  }
+  for (const l of levels) {
+    const opt = document.createElement("option");
+    opt.value = l; opt.textContent = l;
+    lSel.appendChild(opt);
+  }
+}
+
+function renderJobs() {
+  const fVal = document.getElementById("filter-function").value;
+  const lVal = document.getElementById("filter-level").value;
+  const list = document.getElementById("jobs-list");
+  list.innerHTML = "";
+
+  const filtered = jobsCache.filter(j =>
+    (j.status || "Open").toLowerCase() === "open" &&
+    (!fVal || j.function === fVal) &&
+    (!lVal || j.level === lVal)
+  );
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty">No open roles match those filters right now.</div>`;
+    return;
+  }
+
+  for (const job of filtered) {
+    const card = document.createElement("div");
+    card.className = "job-card";
+    card.innerHTML = `
+      <div>
+        <h3>${job.title}</h3>
+        <div class="job-meta">
+          <span class="tag">${job.function}</span>
+          <span class="tag">${job.level}</span>
+        </div>
+        <p class="job-meta" style="margin-top:8px;max-width:520px;">${job.description || ""}</p>
+      </div>
+      <button class="apply-btn" data-job-id="${job.job_id}">Apply</button>
+    `;
+    list.appendChild(card);
+  }
+
+  list.querySelectorAll(".apply-btn").forEach(btn => {
+    btn.addEventListener("click", () => openApplyDialog(btn.dataset.jobId));
+  });
+}
+
+function openApplyDialog(jobId) {
+  const job = jobsCache.find(j => j.job_id === jobId);
+  if (!job) return;
+
+  document.getElementById("dialog-job-title").textContent = `Apply: ${job.title}`;
+  document.getElementById("dialog-job-meta").textContent = `${job.function} · ${job.level}`;
+  document.getElementById("f-job-id").value = job.job_id;
+
+  document.getElementById("dialog-form-view").hidden = false;
+  document.getElementById("dialog-success-view").hidden = true;
+  document.getElementById("dialog-error-view").hidden = true;
+  document.getElementById("apply-form").reset();
+  document.getElementById("f-job-id").value = job.job_id;
+
+  document.getElementById("apply-dialog").showModal();
+}
+
+const MAX_RESUME_BYTES = 8 * 1024 * 1024; // 8MB
+
+function readFileAsBase64(file) {
+  // Apps Script's doPost can't accept multipart/form-data the way a
+  // normal server can -- it only sees whatever JSON body we send it. So
+  // the file is read client-side and embedded as base64 text in the
+  // same JSON payload as the rest of the form; Code.gs decodes it back
+  // into bytes and writes it to Drive. Fine for resume-sized files
+  // (a few MB), not a general-purpose upload mechanism.
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+    reader.onerror = () => reject(reader.error || new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function showApplyError(message) {
+  document.getElementById("error-message").textContent = message;
+  document.getElementById("dialog-form-view").hidden = true;
+  document.getElementById("dialog-error-view").hidden = false;
+}
+
+async function submitApplication(evt) {
+  evt.preventDefault();
+  const job = jobsCache.find(j => j.job_id === document.getElementById("f-job-id").value);
+
+  const resumeFile = document.getElementById("f-resume-file").files[0];
+  if (resumeFile && resumeFile.size > MAX_RESUME_BYTES) {
+    showApplyError("That resume file is larger than 8MB -- please use a smaller file, or paste a link below instead.");
+    return;
+  }
+
+  const payload = {
+    job_id: job.job_id,
+    applied_role: job.title,
+    applied_function: job.function,
+    applied_level: job.level,
+    first_name: document.getElementById("f-first-name").value.trim(),
+    last_name: document.getElementById("f-last-name").value.trim(),
+    email: document.getElementById("f-email").value.trim(),
+    phone: document.getElementById("f-phone").value.trim(),
+    location: document.getElementById("f-location").value.trim(),
+    years_of_experience: Number(document.getElementById("f-years").value || 0),
+    key_skills: document.getElementById("f-skills").value.trim(),
+    secondary_interest_functions: document.getElementById("f-interests").value.trim(),
+    resume_summary: document.getElementById("f-summary").value.trim(),
+    resume_link: document.getElementById("f-resume").value.trim(),
+  };
+
+  if (resumeFile) {
+    try {
+      payload.resume_file_base64 = await readFileAsBase64(resumeFile);
+      payload.resume_file_name = resumeFile.name;
+      payload.resume_file_mime_type = resumeFile.type || "application/octet-stream";
+    } catch (err) {
+      console.error("Could not read the attached resume:", err);
+      showApplyError("We couldn't read that resume file -- please try again or paste a link instead.");
+      return;
+    }
+  }
+
+  if (!isLiveMode()) {
+    // Demo mode: no backend configured, just show success.
+    console.log("[demo mode] Would submit application:", { ...payload, resume_file_base64: payload.resume_file_base64 ? "<omitted>" : undefined });
+    document.getElementById("dialog-form-view").hidden = true;
+    document.getElementById("dialog-success-view").hidden = false;
+    return;
+  }
+
+  try {
+    // Apps Script Web Apps serve their response through a redirect to a
+    // script.googleusercontent.com URL that doesn't carry CORS headers
+    // permitting this page's origin to read it -- so even a fully
+    // successful POST throws when we try to parse a JSON body back from
+    // it. mode: "no-cors" sidesteps that: the request still goes out and
+    // Code.gs's doPost still runs (that's what actually wrote the row to
+    // Applicants and, if a resume was attached, the file to Drive), we
+    // just can't read anything back about how it went. A thrown error
+    // here means the request itself never reached Google (offline,
+    // wrong URL, etc.) -- not a validation failure on their end, since
+    // required fields are already enforced above via the form's own
+    // "required" attributes before we get here.
+    await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids a CORS preflight against Apps Script
+      body: JSON.stringify(payload),
+    });
+
+    document.getElementById("dialog-form-view").hidden = true;
+    document.getElementById("dialog-success-view").hidden = false;
+  } catch (err) {
+    console.error("Application submission failed:", err);
+    showApplyError("We couldn't submit your application right now. Please try again shortly.");
+  }
+}
+
+document.getElementById("apply-form").addEventListener("submit", submitApplication);
+document.getElementById("cancel-btn").addEventListener("click", () => document.getElementById("apply-dialog").close());
+document.getElementById("close-success-btn").addEventListener("click", () => document.getElementById("apply-dialog").close());
+document.getElementById("close-error-btn").addEventListener("click", () => document.getElementById("apply-dialog").close());
+document.getElementById("filter-function").addEventListener("change", renderJobs);
+document.getElementById("filter-level").addEventListener("change", renderJobs);
+
+(async function init() {
+  jobsCache = await loadJobs();
+  populateFilters(jobsCache);
+  renderJobs();
+})();
+</script>
+
+</body>
+</html>
