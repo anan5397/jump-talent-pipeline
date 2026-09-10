@@ -5,10 +5,11 @@ name: Sync Talent Pipeline
 # rejected-candidate -> Talent Matches flow keeps working regardless of
 # whether anyone's machine is on.
 #
-# Requires two repository secrets (Settings > Secrets and variables >
+# Requires three repository secrets (Settings > Secrets and variables >
 # Actions > New repository secret):
 #   GOOGLE_SERVICE_ACCOUNT_JSON  -- the full contents of service_account.json
 #   GOOGLE_SPREADSHEET_URL       -- the live sheet's URL
+#   ANTHROPIC_API_KEY            -- for real Claude scoring instead of the offline stub
 
 on:
   schedule:
@@ -29,7 +30,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install gspread google-auth python-dotenv
+        run: pip install gspread google-auth python-dotenv anthropic
 
       - name: Write service account credentials
         env:
@@ -39,4 +40,5 @@ jobs:
       - name: Run sync
         env:
           GOOGLE_SPREADSHEET_URL: ${{ secrets.GOOGLE_SPREADSHEET_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python -m src.sheets_bridge
